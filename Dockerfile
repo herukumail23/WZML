@@ -1,56 +1,36 @@
-# -------- BASE IMAGE --------
-FROM python:3.10-slim
+FROM anasty17/mltb:latest
 
-# -------- ENV SETTINGS --------
-ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    DEBIAN_FRONTEND=noninteractive
+# Working directory
+WORKDIR /usr/src/app
 
-# -------- WORKDIR --------
-WORKDIR /app
-
-# -------- SYSTEM DEPENDENCIES --------
-RUN apt update && apt install -y --no-install-recommends \
+# System dependencies (important for your libs)
+RUN apt update && apt install -y \
     ffmpeg \
     aria2 \
     mediainfo \
-    git \
-    curl \
-    wget \
-    ca-certificates \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2 \
-    libxshmfence1 \
-    libxss1 \
-    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# -------- CREATE VENV --------
-RUN python -m venv /venv
+# Create virtual environment
+RUN python3 -m venv /venv
+
+# Activate venv
 ENV PATH="/venv/bin:$PATH"
 
-# -------- FIX PIP + SETUPTOOLS (pkg_resources fix) --------
-RUN python -m ensurepip --upgrade \
- && pip install --upgrade pip wheel \
- && pip install --force-reinstall setuptools
+# Upgrade pip inside venv
+RUN pip install --upgrade pip
 
-# -------- INSTALL REQUIREMENTS --------
+# Copy requirements
 COPY requirements.txt .
+
+# Install Python packages inside venv
 RUN pip install --no-cache-dir -r requirements.txt
 
-# -------- PLAYWRIGHT (SAFE INSTALL) --------
-RUN pip install playwright \
- && playwright install chromium
+# Install playwright stuff
+RUN playwright install chromium
+RUN playwright install-deps
 
-# -------- COPY PROJECT FILES --------
+# Copy project files
 COPY . .
 
-# -------- RUN BOT (FORCE VENV PYTHON) --------
-CMD ["/venv/bin/python", "-m", "bot"]
+# Run bot
+CMD ["bash", "start.sh"]

@@ -50,4 +50,4 @@ RUN pip install playwright \
 COPY . .
 
 # -------- START --------
-CMD ["bash", "start.sh"]
+CMD ["python", "-m", "bot"]

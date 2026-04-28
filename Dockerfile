@@ -35,7 +35,8 @@ RUN apt update && apt install -y --no-install-recommends \
 RUN python -m venv /venv
 ENV PATH="/venv/bin:$PATH"
 
-RUN pip install --upgrade pip wheel setuptools
+RUN pip install --upgrade pip wheel \
+ && pip install --force-reinstall setuptools
 
 # -------- INSTALL REQUIREMENTS --------
 COPY requirements.txt .
@@ -50,4 +51,4 @@ RUN pip install playwright \
 COPY . .
 
 # -------- START --------
-CMD ["python", "-m", "bot"]
+CMD ["bash", "start.sh"]

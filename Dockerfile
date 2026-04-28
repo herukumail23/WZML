@@ -1,61 +1,53 @@
-FROM anasty17/mltb:latest
+# -------- BASE --------
+FROM python:3.10-slim
 
-# Working directory
-WORKDIR /usr/src/app
+# Avoid unnecessary logs & cache
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# System dependencies (important for your libs)
-RUN apt update && apt install -y \
+WORKDIR /app
+
+# -------- SYSTEM DEPENDENCIES --------
+RUN apt update && apt install -y --no-install-recommends \
     ffmpeg \
     aria2 \
     mediainfo \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create virtual environment
-RUN python3 -m venv /venv
-
-# Activate venv
-ENV PATH="/venv/bin:$PATH"
-
-# Upgrade pip inside venv
-RUN pip install --upgrade pip
-
-# Copy requirements
-COPY requirements.txt .
-
-# Install Python packages inside venv
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Install playwright stuff
-RUN playwright install chromium
-RUN apt update && apt install -y \
-    wget \
+    git \
     curl \
+    wget \
     ca-certificates \
-    fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libdrm2 \
-    libgbm1 \
-    libgtk-3-0 \
-    libnspr4 \
     libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
     libx11-xcb1 \
     libxcomposite1 \
     libxdamage1 \
-    libxext6 \
-    libxfixes3 \
     libxrandr2 \
+    libgbm1 \
+    libasound2 \
     libxshmfence1 \
     libxss1 \
-    libxtst6 \
-    xdg-utils \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
+# -------- PYTHON SETUP --------
+RUN python -m venv /venv
+ENV PATH="/venv/bin:$PATH"
+
+RUN pip install --upgrade pip wheel setuptools
+
+# -------- INSTALL REQUIREMENTS --------
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# -------- PLAYWRIGHT (LIGHT SETUP) --------
+RUN pip install playwright \
+    && playwright install chromium
+
+# -------- COPY PROJECT --------
 COPY . .
 
-# Run bot
+# -------- START --------
 CMD ["python", "bot.py"]

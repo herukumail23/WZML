@@ -1,16 +1,36 @@
 FROM anasty17/mltb:latest
 
+# Working directory
 WORKDIR /usr/src/app
-RUN chmod 777 /usr/src/app
 
+# System dependencies (important for your libs)
+RUN apt update && apt install -y \
+    ffmpeg \
+    aria2 \
+    mediainfo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python3 -m venv /venv
+
+# Activate venv
+ENV PATH="/venv/bin:$PATH"
+
+# Upgrade pip inside venv
+RUN pip install --upgrade pip
+
+# Copy requirements
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Install Python packages inside venv
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install playwright stuff
 RUN playwright install chromium
 RUN playwright install-deps
-RUN apt-get update && apt-get upgrade -y
-RUN apt -qq update --fix-missing && \
-    apt -qq install -y mediainfo
 
+# Copy project files
 COPY . .
 
-CMD ["bash", "start.sh"]
+# Run bot
+CMD ["python", "bot.py"]

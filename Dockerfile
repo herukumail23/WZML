@@ -1,11 +1,12 @@
-# -------- BASE --------
+# -------- BASE IMAGE --------
 FROM python:3.10-slim
 
-# Avoid unnecessary logs & cache
+# -------- ENV SETTINGS --------
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     DEBIAN_FRONTEND=noninteractive
 
+# -------- WORKDIR --------
 WORKDIR /app
 
 # -------- SYSTEM DEPENDENCIES --------
@@ -31,24 +32,25 @@ RUN apt update && apt install -y --no-install-recommends \
     fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# -------- PYTHON SETUP --------
+# -------- CREATE VENV --------
 RUN python -m venv /venv
 ENV PATH="/venv/bin:$PATH"
 
-RUN pip install --upgrade pip wheel \
+# -------- FIX PIP + SETUPTOOLS (pkg_resources fix) --------
+RUN python -m ensurepip --upgrade \
+ && pip install --upgrade pip wheel \
  && pip install --force-reinstall setuptools
 
 # -------- INSTALL REQUIREMENTS --------
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
-# -------- PLAYWRIGHT (LIGHT SETUP) --------
+# -------- PLAYWRIGHT (SAFE INSTALL) --------
 RUN pip install playwright \
-    && playwright install chromium
+ && playwright install chromium
 
-# -------- COPY PROJECT --------
+# -------- COPY PROJECT FILES --------
 COPY . .
 
-# -------- START --------
-CMD ["bash", "start.sh"]
+# -------- RUN BOT (FORCE VENV PYTHON) --------
+CMD ["/venv/bin/python", "-m", "bot"]
